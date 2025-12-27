@@ -8,17 +8,24 @@
 }
 
 a {
+  font-family: 'TT Norms Pro Mono';
   cursor: pointer;
   text-decoration: none;
   font-size: 16px;
   color: #131313;
   text-transform: lowercase;
   line-height: 120%;
-  letter-spacing: -4%;
+  letter-spacing: -0.04em;
+  font-weight: 400;
 }
 
 p {
   text-transform: uppercase;
+  font-family: 'TT Norms Pro Mono';
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 120%;
+  letter-spacing: -0.01em;
 }
 
 ul,
@@ -32,9 +39,10 @@ img {
 }
 
 h1 {
-  font-size: 40px;
-  letter-spacing: -2%;
-  line-height: 115%;
+  font-family: 'TT Norms Pro';
+  font-weight: 600;
+  font-size: 42px;
+  letter-spacing: -0.03em;
 }
 
 html,
@@ -47,7 +55,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   font-weight: normal;
   font-size: 16px;
-  letter-spacing: -1%;
   line-height: 120%;
   color: #131313;
   background: #D0D0CF;
@@ -104,10 +111,11 @@ body {
   transform: translate(12px, 12px);
   background: #FFFFFF;
   color: #131313;
+  font-family: 'TT Norms Pro';
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: -2%;
+  letter-spacing: -0.03em;
   padding: 4px;
   border: 2px solid black;
   white-space: nowrap;
@@ -166,6 +174,7 @@ body {
   cursor: pointer;
   transition: 0.2s;
   text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
 /*Main------------------------------------------------------------------------------------*/
@@ -196,11 +205,6 @@ body {
   grid-column: 2 / 4;
   grid-row: 2 / 2;
   align-self: end;
-}
-
-.text-block-2 {
-  grid-column: 2 / 4;
-  grid-row: 3 / 3;
 }
 
 /*Switcher------------------------------------------------------------------------------------*/
@@ -292,8 +296,10 @@ input:checked + .slider:before {
 }
 
 .counter {
-  font-size: 72px;
-  font-weight: 900;
+  font-family: 'TT Norms Pro';
+  font-weight: 600;
+  font-size: 64px;
+  letter-spacing: -0.03em;
   margin-bottom: 8px;
   grid-column: 2 / 2;
   grid-row: 5 / 5;
@@ -330,15 +336,23 @@ input:checked + .slider:before {
     grid-column: 2/6;
   }
 
+  .author {
+    grid-column: 2/3;
+    grid-row: 5/5;
+  }
+}
+
+@media (max-width: 1170px) {
+  .text-block-1 {
+    grid-column: 2 / 5;
+  }
+
   .counter {
     place-self: end start;
-    grid-column: 2/4;
   }
 
   .author {
-    place-self: start;
-    grid-column: 2/5;
-    grid-row: 6/6;
+    grid-column: 3 / 5;
   }
 
   .text-author {
