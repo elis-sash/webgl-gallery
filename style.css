@@ -134,40 +134,21 @@ body {
   pointer-events: none;
 }
 
-.nav > * {
+.icon-interactive,
+.nav-button {
   pointer-events: auto;
-}
-
-.nav-icon {
-  display: block;
-  background-repeat: no-repeat;
-  cursor: pointer;
-  transition: all 0.10s step-end;
-}
-
-.nav-icon:hover {
-  transition: none;
 }
 
 .icon-info {
   grid-column: 5 / 5;
   grid-row: 2 / 2;
-  background-image: url("assets/icon/info.svg");
-}
-
-.icon-info:hover {
-  background-image: url("assets/icon/info-hover.svg");
+  place-self: start center;
 }
 
 .icon-contact {
   grid-column: 9 / 9;
-  grid-row: 3 / 3;
-  background-image: url("assets/icon/contact.svg");
-  background-position: center;
-}
-
-.icon-contact:hover {
-  background-image: url("assets/icon/contact-hover.svg");
+  grid-row: 2 / 2;
+  place-self: start center;
 }
 
 .nav-button {
@@ -180,14 +161,14 @@ body {
   font-size: 18px;
   color: #131313;
   background: none;
-  border: 4px solid #131313;
+  border: 3.5px solid #131313;
   border-radius: 30px;
   cursor: pointer;
   transition: 0.2s;
   text-transform: uppercase;
 }
 
-/*Body Grid------------------------------------------------------------------------------------*/
+/*Main------------------------------------------------------------------------------------*/
 .overlay-ui {
   position: fixed;
   top: 0; 
@@ -212,13 +193,13 @@ body {
 }
 
 .text-block-1 {
-  grid-column: 2 / 5;
+  grid-column: 2 / 4;
   grid-row: 2 / 2;
   align-self: end;
 }
 
 .text-block-2 {
-  grid-column: 2 / 5;
+  grid-column: 2 / 4;
   grid-row: 3 / 3;
 }
 
@@ -245,7 +226,7 @@ body {
   height: 85px;
   background: none;
   border-radius: 30px;
-  border: 4px solid #131313;
+  border: 3.5px solid #131313;
   cursor: pointer;
 }
 
@@ -266,10 +247,10 @@ body {
 .slider:before {
   content: "";
   position: absolute;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   background: none;
-  border: 4px solid #131313;
+  border: 3.5px solid #131313;
   border-radius: 50%;
   transition: 0.2s;
 }
@@ -291,8 +272,8 @@ input:checked + .slider:before {
 }
 
 .arrow a span.arrow-button {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
   background-repeat: no-repeat;
@@ -334,4 +315,33 @@ input:checked + .slider:before {
   grid-column: 3 / 5;
   grid-row: 6 / 6;
   place-self: end start;
+}
+
+/* Media------------------------------------------------------------------------------------*/
+@media (max-width: 690px) {
+}
+
+@media (max-width: 1100px) {
+  .icon-info {
+    grid-column: 6/6;
+  }
+
+  .heading {
+    grid-column: 2/6;
+  }
+
+  .counter {
+    place-self: end start;
+    grid-column: 2/4;
+  }
+
+  .author {
+    place-self: start;
+    grid-column: 2/5;
+    grid-row: 6/6;
+  }
+
+  .text-author {
+    grid-column: 2/5;
+  }
 }

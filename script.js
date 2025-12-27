@@ -172,3 +172,12 @@ document.addEventListener('mousemove', e => {
     document.documentElement.style.setProperty('--mouse-x', e.clientX + 'px');
     document.documentElement.style.setProperty('--mouse-y', e.clientY + 'px');
 });
+
+/*Icon-interactive------------------------------------------------------------------------------------*/
+document.querySelectorAll('.icon-interactive[data-hover]').forEach(img => {
+    const original = img.src;
+    const hoverSrc = img.dataset.hover;
+
+    img.addEventListener('mouseenter', () => img.src = hoverSrc);
+    img.addEventListener('mouseleave', () => img.src = original);
+});
