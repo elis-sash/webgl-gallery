@@ -52,10 +52,15 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
     controls.minDistance = 2;
     controls.maxDistance = 10;
     controls.target.set(0, 1.0, 0);
     controls.maxPolarAngle = Math.PI * 0.55;
+
+    controls.enableZoom = true;
+    controls.zoomSpeed = 2.0;
+    controls.zoomDampingFactor = 0.15;
 
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
