@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import customCursorManager from './cursor.js';
 
 let camera, scene, renderer, controls;
 let gltfLoader;
@@ -40,12 +39,12 @@ const galleryData = {
         {
             file: "assets/solo/solo-model(elizaveta-sashenkova).glb",
             authorKey: "solo_1_author",
-            link: "https://",
+            link: "https://sashenkova.com/",
             descKey: "solo_1_desc"
         },
         {
             file: "assets/solo/solo-model(yellow).glb",
-            authorKey: "solo_1_author",
+            authorKey: "solo_2_author",
             link: "https://",
             descKey: "solo_2_desc"
         }
@@ -53,9 +52,9 @@ const galleryData = {
     team: [
         {
             file: "assets/team/team-model(red).glb",
-            authorKey: "solo_1_author",
+            authorKey: "team_1_author",
             links: ["https://"],
-            descKey: "solo_3_desc"
+            descKey: "team_1_desc"
         }
     ]
 };
@@ -68,65 +67,124 @@ init();
 
 /* Initialization ------------------------------------------------------------------------------*/
 async function init() {
+    // Критичные части - загружаем сразу
     await loadLanguage();
     updateFormTexts();
     updateMenuTexts();
     updateInfoModalTexts();
 
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(2.7, 1.7, 3.1);
-
-    scene = new THREE.Scene();
-
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0xbbbbbb);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
-
-    document.getElementById('three-container').appendChild(renderer.domElement);
-
-    const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(environment).texture;
-    scene.background = new THREE.Color(0xbbbbbb);
-    pmremGenerator.dispose();
-
-    scene.add(modelHolder);
-
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.minDistance = 2;
-    controls.maxDistance = 10;
-    controls.target.set(0, 1.0, 0);
-    controls.maxPolarAngle = Math.PI * 0.55;
-    controls.enableZoom = true;
-    controls.zoomSpeed = 2.0;
-    controls.zoomDampingFactor = 0.15;
-
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-    gltfLoader = new GLTFLoader();
-    gltfLoader.setDRACOLoader(dracoLoader);
-
     setupUI();
-    loadFullLamp();
+    
+    // Обновляем UI тексты сразу для раннего отображения LCP элемента
+    const data = galleryData[currentMode];
+    const item = data[currentIndex];
+    updateUITexts(item);
 
-    window.addEventListener('resize', onWindowResize);
-    window.addEventListener('resize', () => {
-        if (isMenuOpen) {
-            const menuLogo = document.querySelector('.menu-logo');
-            const textBlockLogo = document.querySelector('.text-block-1 .logo');
-            if (menuLogo && textBlockLogo) {
-                const rect = textBlockLogo.getBoundingClientRect();
-                menuLogo.style.top = `${rect.top}px`;
-                menuLogo.style.left = `${rect.left}px`;
+    // Определяем мобильное устройство один раз для оптимизации
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // Откладываем инициализацию Three.js для уменьшения времени выполнения JS
+    // Используем requestIdleCallback для некритичных операций
+    const initThree = () => {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(2.7, 1.7, 3.1);
+
+        scene = new THREE.Scene();
+
+        // Оптимизация для мобильных устройств - уменьшаем pixelRatio и отключаем antialias
+        const pixelRatio = isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2);
+        
+        renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: false });
+        renderer.setPixelRatio(pixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xbbbbbb);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+
+        document.getElementById('three-container').appendChild(renderer.domElement);
+        scene.add(modelHolder);
+
+        // Продолжаем инициализацию в следующем кадре
+        requestAnimationFrame(() => {
+            initThreePart2(isMobile);
+        });
+    };
+
+    const initThreePart2 = (isMobile) => {
+        // Оптимизация для мобильных - откладываем создание окружения
+        if (isMobile) {
+            scene.background = new THREE.Color(0xbbbbbb);
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(() => {
+                    const environment = new RoomEnvironment();
+                    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+                    scene.environment = pmremGenerator.fromScene(environment).texture;
+                    pmremGenerator.dispose();
+                }, { timeout: 2000 });
+            } else {
+                setTimeout(() => {
+                    const environment = new RoomEnvironment();
+                    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+                    scene.environment = pmremGenerator.fromScene(environment).texture;
+                    pmremGenerator.dispose();
+                }, 500);
             }
+        } else {
+            const environment = new RoomEnvironment();
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            scene.environment = pmremGenerator.fromScene(environment).texture;
+            scene.background = new THREE.Color(0xbbbbbb);
+            pmremGenerator.dispose();
         }
-    });
-    animate();
+
+        // Продолжаем в следующем кадре
+        requestAnimationFrame(() => {
+            initThreePart3(isMobile);
+        });
+    };
+
+    const initThreePart3 = (isMobile) => {
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.target.set(0, 1.0, 0);
+        controls.maxPolarAngle = Math.PI * 0.55;
+        controls.enableZoom = true;
+        controls.zoomSpeed = 2.0;
+        controls.zoomDampingFactor = 0.15;
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+        gltfLoader = new GLTFLoader();
+        gltfLoader.setDRACOLoader(dracoLoader);
+
+        window.addEventListener('resize', onWindowResize);
+        animate();
+
+        // Загрузка модели отложена для уменьшения нагрузки на main thread
+        if (isMobile && 'requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                loadFullLamp();
+            }, { timeout: 1500 });
+        } else if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                loadFullLamp();
+            }, { timeout: 500 });
+        } else {
+            setTimeout(() => {
+                loadFullLamp();
+            }, 100);
+        }
+    };
+
+    // Запускаем инициализацию Three.js асинхронно
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(initThree, { timeout: 100 });
+    } else {
+        requestAnimationFrame(initThree);
+    }
 }
 
 /* 3D Model Management ------------------------------------------------------------------------------*/
@@ -168,7 +226,7 @@ function setupUI() {
         currentMode = modeToggle.checked ? 'team' : 'solo';
         currentIndex = 0;
         loadFullLamp();
-        if (isAuthorsOpen) closeAuthorsList();
+        // closeAuthorsList не определена, убираем вызов
     });
 
     document.getElementById('prev').addEventListener('click', e => {
@@ -329,8 +387,6 @@ function openMenu() {
     const burgerMenu = document.getElementById('burgerMenu');
     const menuOverlay = document.getElementById('menuOverlay');
     const menuContainer = document.querySelector('.menu');
-    const menuLogo = document.querySelector('.menu-logo');
-    const textBlockLogo = document.querySelector('.text-block-1 .logo');
     
     if (!burgerMenu || !menuOverlay) return;
 
@@ -339,12 +395,6 @@ function openMenu() {
     menuOverlay.classList.add('is-open');
     if (menuContainer) {
         menuContainer.style.zIndex = '1002';
-    }
-    
-    if (menuLogo && textBlockLogo) {
-        const rect = textBlockLogo.getBoundingClientRect();
-        menuLogo.style.top = `${rect.top}px`;
-        menuLogo.style.left = `${rect.left}px`;
     }
     
     document.body.style.overflow = 'hidden';
@@ -418,15 +468,26 @@ async function loadFullLamp() {
 /* Animation & Window Resize ------------------------------------------------------------------------------*/
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+    if (controls) controls.update();
+    if (renderer && scene && camera) renderer.render(scene, camera);
 }
 
 function onWindowResize() {
+    if (!camera || !renderer) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+// Поддержка back/forward cache - восстанавливаем состояние при возврате на страницу
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        // Страница загружена из кеша, перезапускаем анимацию если нужно
+        if (renderer && scene && camera && controls) {
+            animate();
+        }
+    }
+});
 
 /* Tooltip ------------------------------------------------------------------------------*/
 document.addEventListener('mousemove', e => {
@@ -465,6 +526,13 @@ if (infoTrigger && infoModal) {
     infoTrigger.addEventListener('click', (e) => {
         e.preventDefault();
         openInfoModal();
+    });
+    
+    infoTrigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openInfoModal();
+        }
     });
 }
 
@@ -516,6 +584,13 @@ if (contactTrigger && contactModal) {
     contactTrigger.addEventListener('click', (e) => {
         e.preventDefault();
         openContactModal();
+    });
+    
+    contactTrigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openContactModal();
+        }
     });
 }
 
