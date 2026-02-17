@@ -286,6 +286,7 @@ a,
   display: flex;
   flex-direction: column;
   max-height: 100vh;
+  will-change: transform;
 }
 
 .menu-overlay.is-open {
@@ -852,6 +853,7 @@ input:checked + .slider:before {
 
   .menu-overlay {
     padding: 20px;
+    transition: transform 0.2s ease-out, padding 0.2s ease-out;
   }
 
   .menu-description {
