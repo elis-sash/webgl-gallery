@@ -443,6 +443,9 @@ a,
   line-height: 120%;
   letter-spacing: -0.04em;
   font-weight: 400;
+  position: relative;
+  z-index: 1003;
+  pointer-events: auto;
 }
 
 .switch {
@@ -453,12 +456,15 @@ a,
   border-radius: 30px;
   border: 3.5px solid #131313;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .switch input {
   opacity: 0;
   width: 0;
   height: 0;
+  position: absolute;
+  pointer-events: none;
 }
 
 .slider { 
