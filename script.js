@@ -93,7 +93,7 @@ async function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0xbbbbbb);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
+    renderer.toneMappingExposure = 1.05;
 
     document.getElementById('three-container').appendChild(renderer.domElement);
         scene.add(modelHolder);
@@ -109,6 +109,9 @@ async function init() {
     scene.environment = pmremGenerator.fromScene(environment).texture;
     scene.background = new THREE.Color(0xbbbbbb);
     pmremGenerator.dispose();
+    environment.dispose();
+
+    setupSceneLighting();
 
         requestAnimationFrame(() => {
             initThreePart3(isMobile);
@@ -144,6 +147,34 @@ async function init() {
     } else {
         requestAnimationFrame(initThree);
             }
+}
+
+/* Lighting ------------------------------------------------------------------------------*/
+function setupSceneLighting() {
+    const hemi = new THREE.HemisphereLight(0xf5f5f8, 0x8a8a90, 0.45);
+    scene.add(hemi);
+
+    const keyLight = new THREE.DirectionalLight(0xfff4e6, 1.15);
+    keyLight.position.set(3.5, 5.5, 2.5);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xc5d4f5, 0.35);
+    fillLight.position.set(-2.5, 2.5, -3.5);
+    scene.add(fillLight);
+}
+
+function prepareModelMaterials(model) {
+    model.traverse(child => {
+        if (!child.isMesh) return;
+
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach(material => {
+            if (!material?.isMeshStandardMaterial && !material?.isMeshPhysicalMaterial) return;
+
+            material.envMapIntensity = 1.1;
+            material.needsUpdate = true;
+        });
+    });
 }
 
 /* 3D Model Management ------------------------------------------------------------------------------*/
@@ -426,6 +457,7 @@ async function loadFullLamp() {
             modelHolder.remove(currentModel);
         }
 
+        prepareModelMaterials(model);
         currentModel = model;
         modelHolder.add(model);
     }
