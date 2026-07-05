@@ -104,13 +104,7 @@ async function init() {
     };
 
     const initThreePart2 = (isMobile) => {
-    const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(environment).texture;
     scene.background = new THREE.Color(0xbbbbbb);
-    pmremGenerator.dispose();
-    environment.dispose();
-
     setupSceneLighting();
 
         requestAnimationFrame(() => {
@@ -140,6 +134,7 @@ async function init() {
         window.addEventListener('resize', onWindowResize);
         animate();
     loadFullLamp();
+    applyEnvironmentMap();
     };
 
     if ('requestIdleCallback' in window) {
@@ -150,6 +145,14 @@ async function init() {
 }
 
 /* Lighting ------------------------------------------------------------------------------*/
+function applyEnvironmentMap() {
+    const environment = new RoomEnvironment();
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmremGenerator.fromScene(environment).texture;
+    pmremGenerator.dispose();
+    environment.dispose();
+}
+
 function setupSceneLighting() {
     const hemi = new THREE.HemisphereLight(0xf5f5f8, 0x8a8a90, 0.45);
     scene.add(hemi);
@@ -431,7 +434,10 @@ async function loadFullLamp() {
     const item = data[currentIndex];
 
     document.getElementById('counter').textContent = `${currentIndex + 1}-${data.length}`;
-    document.getElementById('author-link').href = item.link || item.links?.[0] || '#';
+    const authorLink = document.getElementById('author-link');
+    authorLink.href = item.link || item.links?.[0] || '#';
+    authorLink.target = '_blank';
+    authorLink.rel = 'noopener noreferrer';
 
     updateUITexts(item);
 
