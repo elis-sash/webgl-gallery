@@ -8,6 +8,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="font-license" content="Licensed font TypeType: TT Norms Pro, TT Norms Pro Mono - https://typetype.org/">
     <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon">
+
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="modulepreload" href="https://unpkg.com/three@0.160.0/build/three.module.js" crossorigin>
     
     <link rel="preload" href="./lang/ru.json" as="fetch" crossorigin>
     <link rel="preload" href="./lang/en.json" as="fetch" crossorigin>
@@ -63,7 +67,7 @@
                         <a href="https://mail.google.com/mail/?view=cm&to=elisa.sashenkova@gmail.com" class="menu-social-link menu-social-at" target="_blank" rel="noopener noreferrer">@</a>
                         <a href="https://sashenkova.com/" class="menu-social-link" data-translate="menu.social.portfolio" target="_blank" rel="noopener noreferrer">portfolio</a>
                         <a href="https://github.com/llS634" class="menu-social-link" data-translate="menu.social.github" target="_blank" rel="noopener noreferrer">github</a>
-                        <a href="#" class="menu-social-link" id="menuSocialThird" data-translate="menu.social.third">tg</a>
+                        <a href="#" class="menu-social-link" id="menuSocialThird" data-translate="menu.social.third" target="_blank" rel="noopener noreferrer">tg</a>
                     </div>
                 </div>
 
@@ -116,7 +120,7 @@
         <div class="counter" id="counter"></div>
 
         <div class="author" id="author">
-            [<a href="#" id="author-link"><span id="author-name"></span><svg class="arrow-outward-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M18 6H10M18 6V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>]
+            [<a href="#" id="author-link" target="_blank" rel="noopener noreferrer"><span id="author-name"></span><svg class="arrow-outward-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M18 6H10M18 6V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>]
         </div>
 
         <p class="text-author" id="text-author"></p>
@@ -138,7 +142,7 @@
                 <a href="https://sashenkova.com/" class="contact-social-link contact-social-top-left" data-translate="menu.social.portfolio" target="_blank" rel="noopener noreferrer">portfolio</a>
                 <a href="https://mail.google.com/mail/?view=cm&to=elisa.sashenkova@gmail.com" class="contact-social-link contact-social-top-right contact-social-at" target="_blank" rel="noopener noreferrer">@</a>
                 <a href="https://github.com/llS634" class="contact-social-link contact-social-bottom-left" data-translate="menu.social.github" target="_blank" rel="noopener noreferrer">github</a>
-                <a href="#" class="contact-social-link contact-social-bottom-right" id="contactSocialThird" data-translate="menu.social.third">tg</a>
+                <a href="#" class="contact-social-link contact-social-bottom-right" id="contactSocialThird" data-translate="menu.social.third" target="_blank" rel="noopener noreferrer">tg</a>
             </div>
         </div>
     </div>
