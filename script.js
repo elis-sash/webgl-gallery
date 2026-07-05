@@ -114,6 +114,7 @@ async function init() {
 
     const initThreePart3 = (isMobile) => {
     controls = new OrbitControls(camera, renderer.domElement);
+    controls.enablePan = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.minDistance = 2;
