@@ -99,11 +99,11 @@ function startThreeJS() {
         scene = new THREE.Scene();
 
         renderer = new THREE.WebGLRenderer({
-            antialias: !IS_MOBILE,
+            antialias: true,
             alpha: false,
             powerPreference: 'high-performance'
         });
-        renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setClearColor(0xbbbbbb);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -183,7 +183,7 @@ function setupPageLifecycleHandlers() {
         if (!renderer || !scene || !camera) return;
 
         applySceneEnvironment();
-        renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
         if (controls) controls.update();
         animate();
@@ -567,7 +567,7 @@ function onWindowResize() {
     if (!camera || !renderer) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     updateCameraPosition();
 }
