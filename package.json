@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "compress-models": "node scripts/compress-models.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,5 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "three": "^0.181.2"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.2.0"
   }
 }

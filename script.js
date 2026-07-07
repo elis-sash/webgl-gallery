@@ -6,6 +6,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 let camera, scene, renderer, controls;
 let gltfLoader;
+let pmremGenerator = null;
+let sceneLightsApplied = false;
 
 const modelHolder = new THREE.Group();
 let currentModel = null;
@@ -65,96 +67,147 @@ let currentMode = 'solo';
 let currentIndex = 0;
 let isAuthorsOpen = false;
 
+const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || window.matchMedia('(max-width: 650px)').matches;
+
 init();
 
 /* Initialization ------------------------------------------------------------------------------*/
 async function init() {
+    startThreeJS();
+
     await loadLanguage();
     updateFormTexts();
     updateMenuTexts();
     updateInfoModalTexts();
-
     setupUI();
-    
+
     const data = galleryData[currentMode];
     const item = data[currentIndex];
-    updateUITexts(item);
+    updateGalleryMeta(item);
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    deferNonCriticalUI();
+    initExternalLinks();
+}
 
+function startThreeJS() {
     const initThree = () => {
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(2.7, 1.7, 3.1);
+        try {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(2.7, 1.7, 3.1);
 
-    scene = new THREE.Scene();
+        scene = new THREE.Scene();
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0xbbbbbb);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+        renderer = new THREE.WebGLRenderer({
+            antialias: !IS_MOBILE,
+            alpha: false,
+            powerPreference: 'high-performance'
+        });
+        renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xbbbbbb);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.05;
 
-    document.getElementById('three-container').appendChild(renderer.domElement);
+        document.getElementById('three-container').appendChild(renderer.domElement);
         scene.add(modelHolder);
 
-        requestAnimationFrame(() => {
-            initThreePart2(isMobile);
-        });
+        requestAnimationFrame(() => initThreePart2());
+        } catch (error) {
+            console.error('WebGL initialization failed:', error);
+        }
     };
 
-    const initThreePart2 = (isMobile) => {
-    scene.background = new THREE.Color(0xbbbbbb);
-    setupSceneLighting();
+    const initThreePart2 = () => {
+        applySceneEnvironment();
+        setupSceneLighting();
 
-        requestAnimationFrame(() => {
-            initThreePart3(isMobile);
-        });
+        requestAnimationFrame(() => initThreePart3());
     };
 
-    const initThreePart3 = (isMobile) => {
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enablePan = false;
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.minDistance = 2;
-    controls.maxDistance = 10;
-    controls.target.set(0, 1.0, 0);
-    controls.maxPolarAngle = Math.PI * 0.55;
-    controls.enableZoom = true;
-    controls.zoomSpeed = 2.0;
-    controls.zoomDampingFactor = 0.15;
+    const initThreePart3 = () => {
+        const canvasHost = document.getElementById('three-container');
 
-    updateCameraPosition();
+        controls = new OrbitControls(camera, canvasHost);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 0.75;
+        controls.maxDistance = 12;
+        controls.target.set(0, 1.0, 0);
+        controls.maxPolarAngle = Math.PI * 0.55;
+        controls.enableZoom = true;
+        controls.zoomSpeed = IS_MOBILE ? 2.5 : 5.0;
 
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-    gltfLoader = new GLTFLoader();
-    gltfLoader.setDRACOLoader(dracoLoader);
+        updateCameraPosition();
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('./assets/draco/gltf/');
+        gltfLoader = new GLTFLoader();
+        gltfLoader.setDRACOLoader(dracoLoader);
 
         window.addEventListener('resize', onWindowResize);
+        setupPageLifecycleHandlers();
         animate();
-    loadFullLamp();
-    applyEnvironmentMap();
+        loadFullLamp();
     };
 
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(initThree, { timeout: 100 });
-    } else {
-        requestAnimationFrame(initThree);
-            }
+    requestAnimationFrame(initThree);
+}
+
+function applySceneEnvironment() {
+    if (!renderer || !scene) return;
+
+    if (scene.environment) {
+        scene.environment.dispose();
+        scene.environment = null;
+    }
+
+    if (pmremGenerator) {
+        pmremGenerator.dispose();
+    }
+
+    pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+    const environment = new RoomEnvironment();
+    scene.environment = pmremGenerator.fromScene(environment).texture;
+    scene.background = new THREE.Color(0xbbbbbb);
+    environment.dispose();
+
+    if (currentModel) {
+        prepareModelMaterials(currentModel);
+    }
+}
+
+function setupPageLifecycleHandlers() {
+    const refreshScene = () => {
+        if (!renderer || !scene || !camera) return;
+
+        applySceneEnvironment();
+        renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        if (controls) controls.update();
+        animate();
+    };
+
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            refreshScene();
+        }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            refreshScene();
+        }
+    });
+
+    renderer.domElement.addEventListener('webglcontextrestored', refreshScene);
 }
 
 /* Lighting ------------------------------------------------------------------------------*/
-function applyEnvironmentMap() {
-    const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(environment).texture;
-    pmremGenerator.dispose();
-    environment.dispose();
-}
-
 function setupSceneLighting() {
+    if (sceneLightsApplied) return;
+    sceneLightsApplied = true;
     const hemi = new THREE.HemisphereLight(0xf5f5f8, 0x8a8a90, 0.45);
     scene.add(hemi);
 
@@ -203,7 +256,15 @@ async function loadGLTF(url) {
     }
 
     const gltf = await new Promise(resolve => {
-        gltfLoader.load(url, resolve, undefined, () => resolve(null));
+        gltfLoader.load(
+            url,
+            resolve,
+            undefined,
+            error => {
+                console.error('Failed to load model:', url, error);
+                resolve(null);
+            }
+        );
     });
 
     if (!gltf?.scene) return null;
@@ -256,6 +317,14 @@ const textElements = [
     { selector: '#text-author', keyPrefix: 'descKey' }
 ];
 
+function updateGalleryMeta(item) {
+    const data = galleryData[currentMode];
+    document.getElementById('counter').textContent = `${currentIndex + 1}-${data.length}`;
+    document.getElementById('author-link').href = item.link || item.links?.[0] || '#';
+    applyExternalLinkAttrs(document.getElementById('author-link'));
+    updateUITexts(item);
+}
+
 function updateUITexts(currentGalleryItem = null) {
     textElements.forEach(item => {
         const el = document.querySelector(item.selector);
@@ -305,6 +374,19 @@ function updateFormTexts() {
     });
 }
 
+function applyExternalLinkAttrs(link) {
+    if (!link || !link.href || link.href.endsWith('#') || link.getAttribute('href') === '#') return;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+}
+
+function initExternalLinks() {
+    document.querySelectorAll('a[href^="http"]').forEach(link => {
+        if (link.closest('.paging')) return;
+        applyExternalLinkAttrs(link);
+    });
+}
+
 function getNestedValue(obj, path) {
     return path.split('.').reduce((current, key) => current?.[key], obj);
 }
@@ -321,15 +403,13 @@ function updateThirdSocialLinks() {
     const menuThird = document.getElementById('menuSocialThird');
     if (menuThird) {
         menuThird.href = url;
-        menuThird.target = '_blank';
-        menuThird.rel = 'noopener noreferrer';
+        applyExternalLinkAttrs(menuThird);
     }
 
     const contactThird = document.getElementById('contactSocialThird');
     if (contactThird) {
         contactThird.href = url;
-        contactThird.target = '_blank';
-        contactThird.rel = 'noopener noreferrer';
+        applyExternalLinkAttrs(contactThird);
     }
 }
 
@@ -434,13 +514,7 @@ async function loadFullLamp() {
     const data = galleryData[currentMode];
     const item = data[currentIndex];
 
-    document.getElementById('counter').textContent = `${currentIndex + 1}-${data.length}`;
-    const authorLink = document.getElementById('author-link');
-    authorLink.href = item.link || item.links?.[0] || '#';
-    authorLink.target = '_blank';
-    authorLink.rel = 'noopener noreferrer';
-
-    updateUITexts(item);
+    updateGalleryMeta(item);
 
     const hint = document.getElementById('loading');
     hint.classList.add('visible');
@@ -493,211 +567,181 @@ function onWindowResize() {
     if (!camera || !renderer) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(IS_MOBILE ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     updateCameraPosition();
 }
 
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-        if (renderer && scene && camera && controls) {
-            animate();
-        }
+/* Tooltip, modals & form — deferred to reduce main-thread blocking during load */
+function deferNonCriticalUI() {
+    const run = () => {
+        setupTooltipsAndModals();
+    };
+
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(run, { timeout: 1500 });
+    } else {
+        setTimeout(run, 50);
     }
-});
-
-/* Tooltip ------------------------------------------------------------------------------*/
-document.addEventListener('mousemove', e => {
-    document.documentElement.style.setProperty('--mouse-x', e.clientX + 'px');
-    document.documentElement.style.setProperty('--mouse-y', e.clientY + 'px');
-});
-
-/* Icon Interactive Hover ------------------------------------------------------------------------------*/
-document.querySelectorAll('.icon-interactive[data-hover]').forEach(img => {
-    const original = img.src;
-    const hoverSrc = img.dataset.hover;
-
-    img.addEventListener('mouseenter', () => img.src = hoverSrc);
-    img.addEventListener('mouseleave', () => img.src = original);
-});
-
-/* Info Modal ------------------------------------------------------------------------------*/
-const infoModal = document.getElementById('info-modal');
-const infoDialog = infoModal?.querySelector('.modal__dialog');
-const infoTrigger = document.querySelector('.icon-info');
-
-const openInfoModal = () => {
-    if (!infoModal) return;
-    infoModal.classList.add('is-open');
-    infoModal.setAttribute('aria-hidden', 'false');
-    updateInfoModalTexts();
-};
-
-const closeInfoModal = () => {
-    if (!infoModal) return;
-    infoModal.classList.remove('is-open');
-    infoModal.setAttribute('aria-hidden', 'true');
-};
-
-if (infoTrigger && infoModal) {
-    infoTrigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        openInfoModal();
-    });
-    
-    infoTrigger.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openInfoModal();
-        }
-    });
 }
 
-if (infoModal && infoDialog) {
-    infoModal.addEventListener('click', evt => {
-        if (evt.target === infoModal) {
+function setupTooltipsAndModals() {
+    document.addEventListener('mousemove', e => {
+        document.documentElement.style.setProperty('--mouse-x', e.clientX + 'px');
+        document.documentElement.style.setProperty('--mouse-y', e.clientY + 'px');
+    });
+
+    setupModalHandlers();
+    setupFormHandlers();
+}
+
+function setupModalHandlers() {
+    const infoModal = document.getElementById('info-modal');
+    const infoDialog = infoModal?.querySelector('.modal__dialog');
+    const infoTrigger = document.querySelector('.icon-info');
+
+    const openInfoModal = () => {
+        if (!infoModal) return;
+        infoModal.classList.add('is-open');
+        infoModal.setAttribute('aria-hidden', 'false');
+        updateInfoModalTexts();
+    };
+
+    const closeInfoModal = () => {
+        if (!infoModal) return;
+        infoModal.classList.remove('is-open');
+        infoModal.setAttribute('aria-hidden', 'true');
+    };
+
+    if (infoTrigger && infoModal) {
+        infoTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            openInfoModal();
+        });
+
+        infoTrigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openInfoModal();
+            }
+        });
+    }
+
+    if (infoModal && infoDialog) {
+        infoModal.addEventListener('click', evt => {
+            if (evt.target === infoModal) closeInfoModal();
+        });
+    }
+
+    document.addEventListener('keydown', evt => {
+        if (evt.key === 'Escape' && infoModal?.classList.contains('is-open')) {
             closeInfoModal();
         }
     });
-}
 
-document.addEventListener('keydown', evt => {
-    if (evt.key === 'Escape' && infoModal?.classList.contains('is-open')) {
-        closeInfoModal();
-    }
-});
+    const contactModal = document.getElementById('contact-modal');
+    const contactDialog = contactModal?.querySelector('.modal__dialog');
+    const contactTrigger = document.querySelector('.icon-contact');
 
-function updateInfoModalTexts() {
-    if (!texts.menu) return;
+    const openContactModal = () => {
+        if (!contactModal) return;
+        contactModal.classList.add('is-open');
+        contactModal.setAttribute('aria-hidden', 'false');
+        updateContactModalTexts();
+    };
 
-    document.querySelectorAll('#info-modal [data-translate]').forEach(el => {
-        const key = el.getAttribute('data-translate');
-        const value = getNestedValue(texts, key);
-        if (value) {
-            el.textContent = value;
-        }
-    });
-}
+    const closeContactModal = () => {
+        if (!contactModal) return;
+        contactModal.classList.remove('is-open');
+        contactModal.setAttribute('aria-hidden', 'true');
+    };
 
-/* Contact Modal ------------------------------------------------------------------------------*/
-const contactModal = document.getElementById('contact-modal');
-const contactDialog = contactModal?.querySelector('.modal__dialog');
-const contactTrigger = document.querySelector('.icon-contact');
-
-const openContactModal = () => {
-    if (!contactModal) return;
-    contactModal.classList.add('is-open');
-    contactModal.setAttribute('aria-hidden', 'false');
-    updateContactModalTexts();
-};
-
-const closeContactModal = () => {
-    if (!contactModal) return;
-    contactModal.classList.remove('is-open');
-    contactModal.setAttribute('aria-hidden', 'true');
-};
-
-if (contactTrigger && contactModal) {
-    contactTrigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        openContactModal();
-    });
-    
-    contactTrigger.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+    if (contactTrigger && contactModal) {
+        contactTrigger.addEventListener('click', (e) => {
             e.preventDefault();
             openContactModal();
-        }
-    });
-}
+        });
 
-if (contactModal && contactDialog) {
-    contactModal.addEventListener('click', evt => {
-        if (evt.target === contactModal) {
+        contactTrigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openContactModal();
+            }
+        });
+    }
+
+    if (contactModal && contactDialog) {
+        contactModal.addEventListener('click', evt => {
+            if (evt.target === contactModal) closeContactModal();
+        });
+    }
+
+    document.addEventListener('keydown', evt => {
+        if (evt.key === 'Escape' && contactModal?.classList.contains('is-open')) {
             closeContactModal();
         }
     });
-}
 
-document.addEventListener('keydown', evt => {
-    if (evt.key === 'Escape' && contactModal?.classList.contains('is-open')) {
-        closeContactModal();
-    }
-});
+    const exhibitModal = document.getElementById('exhibit-modal');
+    const exhibitDialog = exhibitModal?.querySelector('.modal__dialog');
+    const exhibitTrigger = document.querySelector('.nav-button');
 
-function updateContactModalTexts() {
-    if (!texts.menu) return;
+    const openModal = () => {
+        if (!exhibitModal) return;
+        exhibitModal.classList.add('is-open');
+        exhibitModal.setAttribute('aria-hidden', 'false');
+    };
 
-    document.querySelectorAll('#contact-modal [data-translate]').forEach(el => {
-        const key = el.getAttribute('data-translate');
-        const value = getNestedValue(texts, key);
-        if (value) {
-            el.textContent = value;
+    const closeModal = () => {
+        if (!exhibitModal) return;
+        exhibitModal.classList.remove('is-open');
+        exhibitModal.setAttribute('aria-hidden', 'true');
+        const formStatus = document.getElementById('form-status');
+        if (formStatus) {
+            formStatus.textContent = '';
+            formStatus.className = 'form-status';
         }
-    });
+    };
 
-    updateThirdSocialLinks();
-}
-
-/* Exhibit Modal & Form ------------------------------------------------------------------------------*/
-const exhibitModal = document.getElementById('exhibit-modal');
-const exhibitDialog = exhibitModal?.querySelector('.modal__dialog');
-const exhibitTrigger = document.querySelector('.nav-button');
-const exhibitForm = document.getElementById('exhibit-form');
-const formStatus = document.getElementById('form-status');
-const submitButton = document.getElementById('exhibit-submit');
-const requiredFields = exhibitForm ? Array.from(exhibitForm.querySelectorAll('input[required], textarea[required]')) : [];
-
-const openModal = () => {
-    if (!exhibitModal) return;
-    exhibitModal.classList.add('is-open');
-    exhibitModal.setAttribute('aria-hidden', 'false');
-};
-
-const closeModal = () => {
-    if (!exhibitModal) return;
-    exhibitModal.classList.remove('is-open');
-    exhibitModal.setAttribute('aria-hidden', 'true');
-    if (formStatus) {
-        formStatus.textContent = '';
-        formStatus.className = 'form-status';
+    if (exhibitTrigger && exhibitModal) {
+        exhibitTrigger.addEventListener('click', () => openModal());
     }
-};
 
-if (exhibitTrigger && exhibitModal) {
-    exhibitTrigger.addEventListener('click', () => openModal());
-}
+    if (exhibitModal && exhibitDialog) {
+        exhibitModal.addEventListener('click', evt => {
+            if (evt.target === exhibitModal) closeModal();
+        });
+    }
 
-if (exhibitModal && exhibitDialog) {
-    exhibitModal.addEventListener('click', evt => {
-        if (evt.target === exhibitModal) {
+    document.addEventListener('keydown', evt => {
+        if (evt.key === 'Escape' && exhibitModal?.classList.contains('is-open')) {
             closeModal();
         }
     });
 }
 
-document.addEventListener('keydown', evt => {
-    if (evt.key === 'Escape' && exhibitModal?.classList.contains('is-open')) {
-        closeModal();
-    }
-});
+function setupFormHandlers() {
+    const exhibitForm = document.getElementById('exhibit-form');
+    const formStatus = document.getElementById('form-status');
+    const submitButton = document.getElementById('exhibit-submit');
+    const requiredFields = exhibitForm ? Array.from(exhibitForm.querySelectorAll('input[required], textarea[required]')) : [];
 
-/* Form Validation ------------------------------------------------------------------------------*/
-const validateField = field => {
-    const isValid = field.value.trim() !== '';
-    field.classList.toggle('field-error', !isValid);
-    return isValid;
-};
+    const validateField = field => {
+        const isValid = field.value.trim() !== '';
+        field.classList.toggle('field-error', !isValid);
+        return isValid;
+    };
 
-requiredFields.forEach(field => {
-    field.addEventListener('input', () => {
-        if (field.classList.contains('field-error')) {
-            validateField(field);
-        }
+    requiredFields.forEach(field => {
+        field.addEventListener('input', () => {
+            if (field.classList.contains('field-error')) {
+                validateField(field);
+            }
+        });
     });
-});
 
-/* Form Submission ------------------------------------------------------------------------------*/
-if (exhibitForm) {
+    if (!exhibitForm) return;
+
     exhibitForm.addEventListener('submit', async evt => {
         evt.preventDefault();
         formStatus.textContent = '';
@@ -738,4 +782,30 @@ if (exhibitForm) {
             submitButton.textContent = texts.form?.submit || 'Отправить';
         }
     });
+}
+
+function updateInfoModalTexts() {
+    if (!texts.menu) return;
+
+    document.querySelectorAll('#info-modal [data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        const value = getNestedValue(texts, key);
+        if (value) {
+            el.textContent = value;
+        }
+    });
+}
+
+function updateContactModalTexts() {
+    if (!texts.menu) return;
+
+    document.querySelectorAll('#contact-modal [data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        const value = getNestedValue(texts, key);
+        if (value) {
+            el.textContent = value;
+        }
+    });
+
+    updateThirdSocialLinks();
 }

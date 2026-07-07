@@ -10,31 +10,8 @@
     <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon">
 
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-    <link rel="modulepreload" href="https://unpkg.com/three@0.160.0/build/three.module.js" crossorigin>
-    
-    <link rel="preload" href="./lang/ru.json" as="fetch" crossorigin>
-    <link rel="preload" href="./lang/en.json" as="fetch" crossorigin>
-    
-    <link rel="stylesheet" href="style.css">
-    
-    <style>
-        @font-face {
-        font-family: 'TT Norms Pro';
-        src: url('assets/fonts/TT_Norms_Pro_Variable.woff2') format('woff2');
-        font-weight: 100 900;
-        font-style: normal;
-        font-display: swap;
-      }
 
-        @font-face {
-        font-family: 'TT Norms Pro Mono';
-        src: url('assets/fonts/TT_Norms_Pro_Mono_Variable.woff2') format('woff2');
-        font-weight: 100 900;
-        font-style: normal;
-        font-display: swap;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -141,7 +118,7 @@
             <div class="contact-modal-content">
                 <a href="https://sashenkova.com/" class="contact-social-link contact-social-top-left" data-translate="menu.social.portfolio" target="_blank" rel="noopener noreferrer">portfolio</a>
                 <a href="https://mail.google.com/mail/?view=cm&to=elisa.sashenkova@gmail.com" class="contact-social-link contact-social-top-right contact-social-at" target="_blank" rel="noopener noreferrer">@</a>
-                <a href="https://github.com/llS634" class="contact-social-link contact-social-bottom-left" data-translate="menu.social.github" target="_blank" rel="noopener noreferrer">github</a>
+                <a href="https://github.com/elis-sash" class="contact-social-link contact-social-bottom-left" data-translate="menu.social.github" target="_blank" rel="noopener noreferrer">github</a>
                 <a href="#" class="contact-social-link contact-social-bottom-right" id="contactSocialThird" data-translate="menu.social.third" target="_blank" rel="noopener noreferrer">tg</a>
             </div>
         </div>
@@ -184,18 +161,6 @@
         </div>
     </div>
 
-<script>
-(function() {
-    var link = document.querySelector('link[rel="preload"][href="style.css"]');
-    if (link && !link.onload) {
-        var fallback = document.createElement('link');
-        fallback.rel = 'stylesheet';
-        fallback.href = 'style.css';
-        document.head.appendChild(fallback);
-    }
-})();
-</script>
-
 <script type="importmap">
 {
     "imports": {
@@ -203,18 +168,6 @@
         "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
     }
 }
-</script>
-
-<script>
-(function() {
-    const lang = (navigator.language || navigator.userLanguage).startsWith('ru') ? 'ru' : 'en';
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.href = `./lang/${lang}.json`;
-    link.as = 'fetch';
-    link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
-})();
 </script>
 
 <script type="module" src="script.js"></script>

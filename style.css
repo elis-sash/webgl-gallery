@@ -7,6 +7,22 @@
   box-sizing: border-box;
 }
 
+@font-face {
+  font-family: 'TT Norms Pro';
+  src: url('assets/fonts/TT_Norms_Pro_Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Norms Pro Mono';
+  src: url('assets/fonts/TT_Norms_Pro_Mono_Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 a {
   font-family: 'TT Norms Pro Mono';
   cursor: pointer;
@@ -238,9 +254,6 @@ a,
 
 .nav-button,
 .menu-exhibit-button {
-  grid-column: 9 / 9;
-  grid-row: 6 / 6;
-  align-self: end;
   height: 46px;
   padding: 8px 16px;
   font-weight: 700;
@@ -253,6 +266,35 @@ a,
   transition: 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  grid-column: 9 / 9;
+  grid-row: 6 / 6;
+  align-self: end;
+}
+
+.modal__button {
+  height: 46px;
+  padding: 8px 16px;
+  font: 700 18px/1 'TT Norms Pro Mono', monospace;
+  color: #131313;
+  background-color: #D0D0CF;
+  border: 3.5px solid #131313;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.modal__button:hover {
+  background-color: #131313;
+  color: #D0D0CF;
+}
+
+@supports (-moz-appearance: none) {
+  .modal__button {
+    -moz-appearance: none;
+    appearance: none;
+  }
 }
 
 .paging {
@@ -669,21 +711,6 @@ input:checked + .slider:before {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-}
-
-.modal__button {
-  height: 46px;
-  padding: 8px 16px;
-  font-weight: 700;
-  font-size: 18px;
-  color: #131313;
-  background: none;
-  border: 3.5px solid #131313;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
 }
 
 .form-status {
